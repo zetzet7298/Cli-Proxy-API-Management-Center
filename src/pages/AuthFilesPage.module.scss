@@ -1586,6 +1586,70 @@
   border-top: 1px solid var(--border-color);
 }
 
+.selectionToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  padding: 10px 12px;
+  border-radius: $radius-md;
+  border: 1px solid color-mix(in srgb, var(--border-color) 66%, transparent);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary-color) 7%, transparent),
+      transparent 56%
+    ),
+    color-mix(in srgb, var(--bg-secondary) 64%, transparent);
+}
+
+.pageSelectionCheckbox {
+  min-width: 0;
+}
+
+.selectionToolbarLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  span {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  small {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+}
+
+.selectionToolbarActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+@include mobile {
+  .selectionToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectionToolbarActions {
+    justify-content: stretch;
+  }
+
+  .selectionToolbarActions :global(.btn.btn-sm) {
+    flex: 1 1 0;
+  }
+}
+
 .batchActionContainer {
   position: fixed;
   left: var(--content-center-x, 50%);

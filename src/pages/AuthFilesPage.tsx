@@ -23,6 +23,7 @@ import { Select } from '@/components/ui/Select';
 import { IconFilterAll, IconSearch } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { SelectionCheckbox } from '@/components/ui/SelectionCheckbox';
 import { copyToClipboard } from '@/utils/clipboard';
 import {
   MAX_CARD_PAGE_SIZE,
@@ -126,6 +127,7 @@ export function AuthFilesPage() {
     handleStatusToggle,
     toggleSelect,
     selectAllVisible,
+    deselectVisible,
     invertVisibleSelection,
     deselectAll,
     batchDownload,
@@ -439,7 +441,18 @@ export function AuthFilesPage() {
     () => sorted.filter((file) => !isRuntimeOnlyAuthFile(file)),
     [sorted]
   );
+  const selectablePageNames = useMemo(
+    () => selectablePageItems.map((file) => file.name),
+    [selectablePageItems]
+  );
   const selectedNames = useMemo(() => Array.from(selectedFiles), [selectedFiles]);
+  const selectedPageCount = useMemo(
+    () => selectablePageNames.filter((name) => selectedFiles.has(name)).length,
+    [selectablePageNames, selectedFiles]
+  );
+  const allPageSelected =
+    selectablePageNames.length > 0 && selectedPageCount === selectablePageNames.length;
+  const somePageSelected = selectedPageCount > 0 && !allPageSelected;
   const selectedHasStatusUpdating = useMemo(
     () => selectedNames.some((name) => statusUpdating[name] === true),
     [selectedNames, statusUpdating]
@@ -449,6 +462,10 @@ export function AuthFilesPage() {
     selectedNames.length === 0 ||
     batchStatusUpdating ||
     selectedHasStatusUpdating;
+  const batchDeleteLabel =
+    selectedNames.length > 0
+      ? t('auth_files.batch_delete_action', { count: selectedNames.length })
+      : t('common.delete');
 
   const copyTextWithNotification = useCallback(
     async (text: string) => {
@@ -817,30 +834,78 @@ export function AuthFilesPage() {
                 description={t('auth_files.search_empty_desc')}
               />
             ) : (
-              <div
-                className={`${styles.fileGrid} ${quotaFilterType ? styles.fileGridQuotaManaged : ''} ${compactMode ? styles.fileGridCompact : ''}`}
-              >
-                {pageItems.map((file) => (
-                  <AuthFileCard
-                    key={file.name}
-                    file={file}
-                    compact={compactMode}
-                    selected={selectedFiles.has(file.name)}
-                    resolvedTheme={resolvedTheme}
-                    disableControls={disableControls}
-                    deleting={deleting}
-                    statusUpdating={statusUpdating}
-                    quotaFilterType={quotaFilterType}
-                    statusBarCache={statusBarCache}
-                    onShowModels={showModels}
-                    onDownload={handleDownload}
-                    onOpenPrefixProxyEditor={openPrefixProxyEditor}
-                    onDelete={handleDelete}
-                    onToggleStatus={handleStatusToggle}
-                    onToggleSelect={toggleSelect}
+              <>
+                <div className={styles.selectionToolbar}>
+                  <SelectionCheckbox
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected}
+                    onChange={(checked) => {
+                      if (checked) {
+                        selectAllVisible(pageItems);
+                      } else {
+                        deselectVisible(pageItems);
+                      }
+                    }}
+                    disabled={selectablePageItems.length === 0}
+                    className={styles.pageSelectionCheckbox}
+                    label={
+                      <div className={styles.selectionToolbarLabel}>
+                        <span>{t('auth_files.batch_select_page')}</span>
+                        <small>
+                          {t('auth_files.batch_page_scope', {
+                            selected: selectedPageCount,
+                            total: selectablePageItems.length,
+                          })}
+                        </small>
+                      </div>
+                    }
+                    ariaLabel={t('auth_files.batch_select_page')}
+                    title={t('auth_files.batch_select_page_hint')}
                   />
-                ))}
-              </div>
+                  <div className={styles.selectionToolbarActions}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => selectAllVisible(sorted)}
+                      disabled={selectableFilteredItems.length === 0}
+                    >
+                      {t('auth_files.batch_select_filtered')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => invertVisibleSelection(pageItems)}
+                      disabled={selectablePageItems.length === 0}
+                    >
+                      {t('auth_files.batch_invert_page')}
+                    </Button>
+                  </div>
+                </div>
+                <div
+                  className={`${styles.fileGrid} ${quotaFilterType ? styles.fileGridQuotaManaged : ''} ${compactMode ? styles.fileGridCompact : ''}`}
+                >
+                  {pageItems.map((file) => (
+                    <AuthFileCard
+                      key={file.name}
+                      file={file}
+                      compact={compactMode}
+                      selected={selectedFiles.has(file.name)}
+                      resolvedTheme={resolvedTheme}
+                      disableControls={disableControls}
+                      deleting={deleting}
+                      statusUpdating={statusUpdating}
+                      quotaFilterType={quotaFilterType}
+                      statusBarCache={statusBarCache}
+                      onShowModels={showModels}
+                      onDownload={handleDownload}
+                      onOpenPrefixProxyEditor={openPrefixProxyEditor}
+                      onDelete={handleDelete}
+                      onToggleStatus={handleStatusToggle}
+                      onToggleSelect={toggleSelect}
+                    />
+                  ))}
+                </div>
+              </>
             )}
 
             {!loading && sorted.length > pageSize && (
@@ -989,7 +1054,7 @@ export function AuthFilesPage() {
                     onClick={() => batchDelete(selectedNames)}
                     disabled={disableControls || selectedNames.length === 0}
                   >
-                    {t('common.delete')}
+                    {batchDeleteLabel}
                   </Button>
                 </div>
               </div>

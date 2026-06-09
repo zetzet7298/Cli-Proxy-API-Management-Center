@@ -44,6 +44,7 @@ export type UseAuthFilesDataResult = {
   handleStatusToggle: (item: AuthFileItem, enabled: boolean) => Promise<void>;
   toggleSelect: (name: string) => void;
   selectAllVisible: (visibleFiles: AuthFileItem[]) => void;
+  deselectVisible: (visibleFiles: AuthFileItem[]) => void;
   invertVisibleSelection: (visibleFiles: AuthFileItem[]) => void;
   deselectAll: () => void;
   batchDownload: (names: string[]) => Promise<void>;
@@ -89,6 +90,25 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
       const next = new Set(prev);
       nextSelected.forEach((name) => next.add(name));
       return next;
+    });
+  }, []);
+
+  const deselectVisible = useCallback((visibleFiles: AuthFileItem[]) => {
+    const visibleNames = visibleFiles
+      .filter((file) => !isRuntimeOnlyAuthFile(file))
+      .map((file) => file.name);
+    if (visibleNames.length === 0) return;
+
+    setSelectedFiles((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set(prev);
+      let changed = false;
+      visibleNames.forEach((name) => {
+        if (next.delete(name)) {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
   }, []);
 
@@ -655,6 +675,7 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
     handleStatusToggle,
     toggleSelect,
     selectAllVisible,
+    deselectVisible,
     invertVisibleSelection,
     deselectAll,
     batchDownload,
